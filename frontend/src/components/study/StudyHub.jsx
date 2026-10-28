@@ -4,10 +4,11 @@ import QuizTab from './QuizTab';
 import RagChatTab from './RagChatTab';
 import QuizHistoryTab from './QuizHistoryTab';
 import FlashcardsTab from './FlashcardsTab';
-import { Sparkles, BrainCircuit, MessageSquare, FileText, ArrowLeft, BarChart3, Layers } from 'lucide-react';
+import ExtractedTextTab from './ExtractedTextTab';
+import { Sparkles, BrainCircuit, MessageSquare, FileText, ArrowLeft, BarChart3, Layers, AlignLeft } from 'lucide-react';
 
-export default function StudyHub({ material, onBack }) {
-  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'flashcards' | 'quiz' | 'history' | 'rag'
+export default function StudyHub({ material, onBack, onUpdate }) {
+  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'flashcards' | 'quiz' | 'history' | 'rag' | 'text'
 
   if (!material) return null;
 
@@ -90,6 +91,12 @@ export default function StudyHub({ material, onBack }) {
           >
             <MessageSquare size={18} /> Document Q&A (RAG)
           </button>
+          <button
+            className={`tab-btn ${activeTab === 'text' ? 'active' : ''}`}
+            onClick={() => setActiveTab('text')}
+          >
+            <AlignLeft size={18} /> Source Text
+          </button>
         </div>
 
         {/* Tab Content Panes */}
@@ -109,10 +116,12 @@ export default function StudyHub({ material, onBack }) {
             />
           )}
           {activeTab === 'rag' && <RagChatTab material={material} />}
+          {activeTab === 'text' && <ExtractedTextTab material={material} />}
         </div>
       </div>
     </div>
   );
 }
+
 
 

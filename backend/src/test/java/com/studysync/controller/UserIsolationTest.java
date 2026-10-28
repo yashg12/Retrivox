@@ -137,6 +137,43 @@ public class UserIsolationTest {
     }
 
     @Test
+    void update_CrossUserAccess_ThrowsForbidden() {
+        when(authService.getCurrentAuthenticatedUser()).thenReturn(userB);
+
+        StudyMaterial matA = new StudyMaterial();
+        matA.setId(1L);
+        matA.setUser(userA);
+
+        when(materialRepository.findById(1L)).thenReturn(Optional.of(matA));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                materialController.update(1L, new com.studysync.dto.UpdateStudyMaterialRequest("New Title", "New Subject")));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        verify(materialRepository, never()).save(any());
+    }
+
+    @Test
+    void update_OwnerAccess_Succeeds() {
+        when(authService.getCurrentAuthenticatedUser()).thenReturn(userA);
+
+        StudyMaterial matA = new StudyMaterial();
+        matA.setId(1L);
+        matA.setUser(userA);
+        matA.setTitle("Old Title");
+        matA.setSubject("Old Subject");
+
+        when(materialRepository.findById(1L)).thenReturn(Optional.of(matA));
+        when(materialRepository.save(any(StudyMaterial.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        StudyMaterial updated = materialController.update(1L,
+                new com.studysync.dto.UpdateStudyMaterialRequest("Updated Title", "Updated Subject"));
+
+        assertEquals("Updated Title", updated.getTitle());
+        assertEquals("Updated Subject", updated.getSubject());
+        verify(materialRepository).save(matA);
+    }
+
+    @Test
     void uploadPdf_CrossUserAccess_ThrowsForbidden() {
         when(authService.getCurrentAuthenticatedUser()).thenReturn(userB);
 

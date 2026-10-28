@@ -73,6 +73,22 @@ public class StudyMaterialController {
         return material;
     }
 
+    @PutMapping("/{id}")
+    public StudyMaterial update(@PathVariable Long id,
+                                @RequestBody @Validated com.studysync.dto.UpdateStudyMaterialRequest request) {
+        com.studysync.model.User currentUser = authService.getCurrentAuthenticatedUser();
+        StudyMaterial material = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "StudyMaterial not found"));
+        if (material.getUser() != null && !currentUser.getId().equals(material.getUser().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to this study material.");
+        }
+        material.setTitle(request.getTitle().trim());
+        if (request.getSubject() != null) {
+            material.setSubject(request.getSubject().trim());
+        }
+        return repository.save(material);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteById(@PathVariable Long id) {

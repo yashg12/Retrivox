@@ -107,6 +107,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ title, subject, fileName })
       }),
+    update: (id, title, subject) =>
+      request(`/api/study-materials/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ title, subject })
+      }),
     delete: (id) => request(`/api/study-materials/${id}`, { method: 'DELETE' }),
     uploadPdf: (id, file) => {
       const formData = new FormData();
