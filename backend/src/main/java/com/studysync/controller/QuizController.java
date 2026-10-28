@@ -50,8 +50,10 @@ public class QuizController {
     }
 
     @GetMapping("/quizzes/attempts")
-    public ResponseEntity<java.util.List<com.studysync.model.QuizAttempt>> getQuizAttempts() {
+    public ResponseEntity<java.util.List<com.studysync.model.QuizAttempt>> getQuizAttempts(
+            @RequestParam(required = false) Long studyMaterialId) {
         com.studysync.model.User currentUser = authService.getCurrentAuthenticatedUser();
-        return ResponseEntity.ok(quizService.getAttemptsForUser(currentUser));
+        return ResponseEntity.ok(quizService.getAttemptsForUser(currentUser, studyMaterialId));
     }
 }
+

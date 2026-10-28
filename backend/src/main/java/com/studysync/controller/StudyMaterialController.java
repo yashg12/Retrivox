@@ -28,16 +28,19 @@ public class StudyMaterialController {
     private final StudyMaterialRepository repository;
     private final StudySummaryService summaryService;
     private final RagService ragService;
+    private final com.studysync.service.FlashcardService flashcardService;
     private final com.studysync.service.AuthService authService;
 
     public StudyMaterialController(
             StudyMaterialRepository repository,
             StudySummaryService summaryService,
             RagService ragService,
+            com.studysync.service.FlashcardService flashcardService,
             com.studysync.service.AuthService authService) {
         this.repository = repository;
         this.summaryService = summaryService;
         this.ragService = ragService;
+        this.flashcardService = flashcardService;
         this.authService = authService;
     }
 
@@ -84,34 +87,58 @@ public class StudyMaterialController {
     }
 
     @PostMapping("/{id}/upload")
-    public ResponseEntity<String> uploadPdf(@PathVariable Long id,
-                                            @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadDocument(@PathVariable Long id,
+                                                @RequestParam("file") MultipartFile file) {
         com.studysync.model.User currentUser = authService.getCurrentAuthenticatedUser();
         final long MAX_SIZE = 5 * 1024 * 1024; // 5 MB
-        if (file.isEmpty() || !"application/pdf".equalsIgnoreCase(file.getContentType())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file type. PDF required.");
+        if (file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Uploaded file cannot be empty.");
         }
         if (file.getSize() > MAX_SIZE) {
             throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "File size exceeds limit of 5 MB.");
         }
+
+        String fileName = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        String contentType = file.getContentType() != null ? file.getContentType().toLowerCase() : "";
+
+        boolean isPdf = "application/pdf".equals(contentType) || fileName.endsWith(".pdf");
+        boolean isText = "text/plain".equals(contentType) || "text/markdown".equals(contentType)
+                || fileName.endsWith(".txt") || fileName.endsWith(".md");
+
+        if (!isPdf && !isText) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file type. Supported formats: PDF, TXT, MD.");
+        }
+
         StudyMaterial material = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "StudyMaterial not found"));
         if (material.getUser() != null && !currentUser.getId().equals(material.getUser().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to this study material.");
         }
-        try (PDDocument document = Loader.loadPDF(file.getBytes())) {
-            PDFTextStripper stripper = new PDFTextStripper();
-            String extracted = stripper.getText(document).trim();
-            if (extracted.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Extracted text is empty.");
+
+        String extracted = "";
+        if (isPdf) {
+            try (PDDocument document = Loader.loadPDF(file.getBytes())) {
+                PDFTextStripper stripper = new PDFTextStripper();
+                extracted = stripper.getText(document).trim();
+            } catch (java.io.IOException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to process PDF file.");
             }
-            material.setExtractedText(extracted);
-            ragService.clearChunksForMaterial(id);
-            repository.save(material);
-            return ResponseEntity.ok("PDF text extracted and saved.");
-        } catch (java.io.IOException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to process PDF file.");
+        } else {
+            try {
+                extracted = new String(file.getBytes(), java.nio.charset.StandardCharsets.UTF_8).trim();
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to read text file content.");
+            }
         }
+
+        if (extracted.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Extracted text is empty.");
+        }
+
+        material.setExtractedText(extracted);
+        ragService.clearChunksForMaterial(id);
+        repository.save(material);
+        return ResponseEntity.ok("Document text extracted and saved.");
     }
 
     @PostMapping("/{id}/summary")
@@ -136,5 +163,15 @@ public class StudyMaterialController {
         QuestionAnswerResponse response = ragService.askQuestion(id, request, currentUser.getId());
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{id}/flashcards")
+    public ResponseEntity<com.studysync.dto.FlashcardsResponse> generateFlashcards(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "10") int count) {
+        com.studysync.model.User currentUser = authService.getCurrentAuthenticatedUser();
+        com.studysync.dto.FlashcardsResponse response = flashcardService.generateFlashcards(id, count, currentUser);
+        return ResponseEntity.ok(response);
+    }
 }
+
 

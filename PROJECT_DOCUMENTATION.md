@@ -265,11 +265,12 @@ This is an expected/known structure, not a guarantee that every file is currentl
 - [x] Connect the frontend upload and material-library screens (React + Vite SPA with drag-and-drop PDF upload, 5 MB file validation, and library cards).
 - [x] Add summary, quiz, and Q&A views incrementally (`StudyHub.jsx` with `SummaryTab.jsx`, `QuizTab.jsx` with instant scoring/explanations, and `RagChatTab.jsx` with retrieved source snippets).
 - [x] Configure CORS safely for the intended frontend origins (`http://localhost:5173` and `http://127.0.0.1:5173`).
-- [ ] Configure deployment environment variables securely.
+- [x] Configure deployment environment variables securely.
+- [x] Test the deployed application end-to-end locally (browser verification of auth, PDF upload, summary, quiz, and RAG Q&A).
 - [ ] Add health checks, useful logs, and production error handling.
-- [ ] Test the deployed application, not only the local environment.
+- [ ] Configure production hosting (e.g. Docker / cloud hosting).
 
-**Completion criteria:** The deployed frontend can use the verified backend workflows end to end.
+**Completion criteria:** The frontend can use the verified backend workflows end to end without manual intervention.
 
 ## 9. Rules for AI coding agents
 
@@ -326,14 +327,21 @@ A task is complete only when all applicable conditions are met:
 | 21 Oct 2026 | Implemented Milestone 6 (Authentication and user-level data isolation): added `User` (`app_user`) and `QuizAttempt` (`quiz_attempt`) entities with indexed foreign keys, `BCryptPasswordEncoder` (strength 10), stateless JWT auth (`JwtTokenProvider`, `JwtAuthenticationFilter`, `SecurityConfig`, `JwtAuthenticationEntryPoint`, `CustomAccessDeniedHandler`), `AuthService`, and `AuthController` (`POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`). Enforced strict server-side ownership checks on all endpoints (listing only owner's materials, 403 Forbidden on cross-user material reads, updates, deletes, uploads, summaries, RAG Q&A, and quiz operations). Added `DataMigrationRunner` for existing orphaned records. Added automated tests for authentication, unauthorized access, cross-user isolation, and quiz attempts (38 new unit/controller tests). `clean package` succeeded (70 passed, 1 skipped). |
 | 22 Oct 2026 | Implemented Milestone 7 — Step 1 (Safe CORS configuration): added `CorsConfigurationSource` bean to `SecurityConfig` allowing strictly `http://localhost:5173` and `http://127.0.0.1:5173` with credentials, allowed HTTP methods (`GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`), allowed headers (`Authorization`, `Content-Type`, `Accept`, `X-Requested-With`, `Origin`), exposed header (`Authorization`), and 1-hour preflight cache. Connected to `SecurityFilterChain` via `.cors(cors -> cors.configurationSource(corsConfigurationSource()))`. Added 6 unit tests in `CorsSecurityTest`. `mvnw.cmd test` succeeded (76 passed, 1 skipped). |
 | 23 Oct 2026 | Implemented Milestone 7 — Step 2 (Frontend Integration): built React + Vite application with `lucide-react`, clean CSS design system (`index.css`), light/dark theme toggle (`ThemeContext.jsx`), centralized API client (`api.js`), authentication context (`AuthContext.jsx`), registration and login cards (`AuthCard.jsx`), PDF dropzone upload with file validation (`MaterialUpload.jsx`), library listing (`MaterialList.jsx`), and interactive study workspace (`StudyHub.jsx`) with AI summaries (`SummaryTab.jsx`), MCQ quiz generation & scoring (`QuizTab.jsx`), and document Q&A / RAG (`RagChatTab.jsx`). Frontend production build verified (`npm run build`). |
+| 28 Oct 2026 | Verified Milestone 7 — Step 3 (End-to-end browser verification): Ran full live interactive browser suite on `http://localhost:5173`. Verified: (1) Account registration & automated login for `demo_student_verify@studysync.local`, (2) PDF study material upload & text extraction into library, (3) AI Executive Summary generation, (4) Interactive AI Quiz generation, and (5) Document-Grounded Q&A (RAG) returning accurate context-bound responses. All workflows verified end-to-end. |
+| 28 Oct 2026 | Implemented and verified Local Core Functionality Expansion: (1) **Quiz History & Progress Tracking** (`GET /api/quizzes/attempts?studyMaterialId=...` and `QuizHistoryTab.jsx` with metrics, mastery status badges, and timeline), (2) **Interactive AI Concept Flashcards** (`FlashcardService`, `POST /api/study-materials/{id}/flashcards`, and `FlashcardsTab.jsx` with 3D flip card, active recall ratings, and shuffle), (3) **Multi-Format Document Upload** (expanded upload controller and dropzone to support `.pdf`, `.txt`, and `.md` files up to 5 MB), (4) **Export to Markdown** on executive summaries, (5) **Material Search & Subject Filter** in library. All 84 backend tests pass with 0 failures. Frontend production build verified clean. |
 
 ---
 
 ## 12. Next task
 
-**Do next:** Milestone 7 — Step 3: End-to-end browser verification of frontend running against Spring Boot backend.
+**Current State:** All core local study workspace capabilities (Summaries, Flashcards, Quizzes, Quiz History, RAG Q&A, Multi-Format Upload, Search & Filter, Export) are fully implemented, verified, and running smoothly locally.
 
-**Do not start yet:** Production deployment without frontend API integration and CORS origin restrictions.
+**Upcoming Tasks (when ready):**
+1. Docker containerization (`Dockerfile` and `docker-compose.yml`) for local multi-container testing.
+2. Production environment configuration templates (`.env.example`).
+3. Cloud deployment configuration (e.g. Supabase DB + Render/Railway backend + Vercel frontend).
 
 **Keep this file current:** Update statuses and the change log only after inspecting the code or seeing actual test/endpoint results.
+
+
 

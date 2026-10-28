@@ -1,12 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { Sparkles, RefreshCw, AlertCircle, Clock } from 'lucide-react';
+import { Sparkles, RefreshCw, AlertCircle, Clock, Download } from 'lucide-react';
 
 export default function SummaryTab({ material }) {
   const [summaryData, setSummaryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
+
+  const handleExportMarkdown = () => {
+    if (!summaryData?.summary) return;
+    const content = `# Summary: ${material.title}\n\n**Subject:** ${material.subject || 'General'}\n**Source File:** ${material.fileName}\n**Generated:** ${new Date().toLocaleDateString()}\n\n---\n\n${summaryData.summary}\n`;
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${material.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_summary.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     if (!material?.id) return;
@@ -57,21 +71,34 @@ export default function SummaryTab({ material }) {
           </p>
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={handleGenerate}
-          disabled={generating || loading}
-        >
-          {generating ? (
-            <>
-              <span className="spinner" /> Analyzing Document...
-            </>
-          ) : (
-            <>
-              <Sparkles size={16} /> {summaryData ? 'Regenerate Summary' : 'Generate Summary'}
-            </>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {summaryData && (
+            <button
+              className="btn btn-secondary"
+              onClick={handleExportMarkdown}
+              title="Download summary as Markdown file"
+              style={{ fontSize: '0.85rem' }}
+            >
+              <Download size={16} /> Export Markdown
+            </button>
           )}
-        </button>
+
+          <button
+            className="btn btn-primary"
+            onClick={handleGenerate}
+            disabled={generating || loading}
+          >
+            {generating ? (
+              <>
+                <span className="spinner" /> Analyzing Document...
+              </>
+            ) : (
+              <>
+                <Sparkles size={16} /> {summaryData ? 'Regenerate Summary' : 'Generate Summary'}
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {error && (

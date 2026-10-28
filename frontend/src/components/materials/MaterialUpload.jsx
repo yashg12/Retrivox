@@ -25,8 +25,12 @@ export default function MaterialUpload({ onMaterialCreated }) {
     setError(null);
     if (!selectedFile) return;
 
-    if (selectedFile.type !== 'application/pdf' && !selectedFile.name.toLowerCase().endsWith('.pdf')) {
-      setError('Only PDF documents are supported.');
+    const isPdf = selectedFile.type === 'application/pdf' || selectedFile.name.toLowerCase().endsWith('.pdf');
+    const isText = selectedFile.type === 'text/plain' || selectedFile.type === 'text/markdown'
+      || selectedFile.name.toLowerCase().endsWith('.txt') || selectedFile.name.toLowerCase().endsWith('.md');
+
+    if (!isPdf && !isText) {
+      setError('Supported formats: PDF, TXT, or Markdown (.md) documents.');
       return;
     }
 
@@ -38,7 +42,7 @@ export default function MaterialUpload({ onMaterialCreated }) {
 
     setFile(selectedFile);
     if (!title) {
-      const cleanName = selectedFile.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ');
+      const cleanName = selectedFile.name.replace(/\.(pdf|txt|md)$/i, '').replace(/[-_]/g, ' ');
       setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
     }
   };
@@ -131,7 +135,7 @@ export default function MaterialUpload({ onMaterialCreated }) {
           <input
             id="pdf-file-input"
             type="file"
-            accept="application/pdf,.pdf"
+            accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
             style={{ display: 'none' }}
             onChange={(e) => e.target.files && validateAndSetFile(e.target.files[0])}
             disabled={loading}
@@ -150,10 +154,10 @@ export default function MaterialUpload({ onMaterialCreated }) {
             <div>
               <UploadCloud size={32} color="var(--text-muted)" style={{ margin: '0 auto 8px auto' }} />
               <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '2px' }}>
-                Click to browse or drop your PDF here
+                Click to browse or drop your notes here
               </div>
               <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                PDF format only, maximum 5 MB
+                PDF, Markdown (.md), or Plain Text (.txt) up to 5 MB
               </div>
             </div>
           )}

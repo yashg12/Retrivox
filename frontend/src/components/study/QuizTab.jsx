@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { api } from '../../services/api';
-import { BrainCircuit, Award, CheckCircle2, XCircle, RotateCcw, AlertCircle, HelpCircle } from 'lucide-react';
+import { BrainCircuit, Award, CheckCircle2, XCircle, RotateCcw, AlertCircle, HelpCircle, BarChart3 } from 'lucide-react';
 
-export default function QuizTab({ material }) {
+export default function QuizTab({ material, onViewHistoryClick }) {
   const [questionCount, setQuestionCount] = useState(5);
   const [difficulty, setDifficulty] = useState('Medium');
   const [quiz, setQuiz] = useState(null);
@@ -179,9 +179,16 @@ export default function QuizTab({ material }) {
             </div>
           </div>
 
-          <button className="btn btn-primary" onClick={handleGenerateQuiz}>
-            <RotateCcw size={16} /> Retake / New Quiz
-          </button>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {onViewHistoryClick && (
+              <button className="btn btn-secondary" onClick={onViewHistoryClick}>
+                <BarChart3 size={16} /> View History
+              </button>
+            )}
+            <button className="btn btn-primary" onClick={handleGenerateQuiz}>
+              <RotateCcw size={16} /> Retake / New Quiz
+            </button>
+          </div>
         </div>
       )}
 

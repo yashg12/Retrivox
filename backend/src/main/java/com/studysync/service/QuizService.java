@@ -174,8 +174,15 @@ public class QuizService {
     }
 
     public List<com.studysync.model.QuizAttempt> getAttemptsForUser(com.studysync.model.User currentUser) {
+        return getAttemptsForUser(currentUser, null);
+    }
+
+    public List<com.studysync.model.QuizAttempt> getAttemptsForUser(com.studysync.model.User currentUser, Long studyMaterialId) {
         if (currentUser == null || attemptRepository == null) {
             return Collections.emptyList();
+        }
+        if (studyMaterialId != null) {
+            return attemptRepository.findAllByUserIdAndStudyMaterialIdOrderByCompletedAtDesc(currentUser.getId(), studyMaterialId);
         }
         return attemptRepository.findAllByUserIdOrderByCompletedAtDesc(currentUser.getId());
     }

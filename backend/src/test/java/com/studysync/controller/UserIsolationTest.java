@@ -45,6 +45,9 @@ public class UserIsolationTest {
     private RagService ragService;
 
     @Mock
+    private com.studysync.service.FlashcardService flashcardService;
+
+    @Mock
     private AuthService authService;
 
     @Mock
@@ -58,7 +61,7 @@ public class UserIsolationTest {
 
     @BeforeEach
     void setUp() {
-        materialController = new StudyMaterialController(materialRepository, summaryService, ragService, authService);
+        materialController = new StudyMaterialController(materialRepository, summaryService, ragService, flashcardService, authService);
         quizController = new QuizController(quizService, authService);
 
         userA = new User("userA@test.edu", "hashA", "User A");
@@ -145,7 +148,7 @@ public class UserIsolationTest {
 
         MockMultipartFile file = new MockMultipartFile("file", "test.pdf", "application/pdf", "%PDF-1.4 sample content".getBytes());
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> materialController.uploadPdf(1L, file));
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> materialController.uploadDocument(1L, file));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         verify(materialRepository, never()).save(any());
     }
@@ -198,4 +201,16 @@ public class UserIsolationTest {
                 () -> quizController.submitQuiz("quiz-of-user-a", new SubmitQuizRequest()));
         assertEquals(HttpStatus.FORBIDDEN, exSub.getStatusCode());
     }
+
+    @Test
+    void flashcardOperations_CrossUserAccess_EnforcesOwnership() {
+        when(authService.getCurrentAuthenticatedUser()).thenReturn(userB);
+        when(flashcardService.generateFlashcards(eq(1L), eq(10), eq(userB)))
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied to this study material."));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> materialController.generateFlashcards(1L, 10));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    }
 }
+

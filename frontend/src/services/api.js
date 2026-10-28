@@ -137,7 +137,10 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ answers })
       }),
-    getAttempts: () => request('/api/quizzes/attempts', { method: 'GET' })
+    getAttempts: (materialId) => {
+      const url = materialId ? `/api/quizzes/attempts?studyMaterialId=${materialId}` : '/api/quizzes/attempts';
+      return request(url, { method: 'GET' });
+    }
   },
 
   // Document Q&A / RAG
@@ -147,5 +150,14 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ question })
       })
+  },
+
+  // Flashcards
+  flashcards: {
+    generate: (materialId, count = 10) =>
+      request(`/api/study-materials/${materialId}/flashcards?count=${count}`, {
+        method: 'POST'
+      })
   }
 };
+

@@ -285,4 +285,32 @@ public class QuizServiceTest {
                 attempt.getScore() == 1
         ));
     }
+
+    @Test
+    void getAttemptsForUser_AllAttempts() {
+        com.studysync.model.User user = new com.studysync.model.User("user@test.edu", "hash", "User");
+        user.setId(5L);
+
+        when(attemptRepository.findAllByUserIdOrderByCompletedAtDesc(5L))
+                .thenReturn(List.of(new com.studysync.model.QuizAttempt(user, "quiz-1", 1L, 5, 4, 80.0)));
+
+        List<com.studysync.model.QuizAttempt> attempts = quizService.getAttemptsForUser(user);
+        assertEquals(1, attempts.size());
+        assertEquals(80.0, attempts.get(0).getPercentage());
+    }
+
+    @Test
+    void getAttemptsForUser_FilteredByStudyMaterialId() {
+        com.studysync.model.User user = new com.studysync.model.User("user@test.edu", "hash", "User");
+        user.setId(5L);
+
+        when(attemptRepository.findAllByUserIdAndStudyMaterialIdOrderByCompletedAtDesc(5L, 2L))
+                .thenReturn(List.of(new com.studysync.model.QuizAttempt(user, "quiz-2", 2L, 5, 5, 100.0)));
+
+        List<com.studysync.model.QuizAttempt> attempts = quizService.getAttemptsForUser(user, 2L);
+        assertEquals(1, attempts.size());
+        assertEquals(100.0, attempts.get(0).getPercentage());
+        assertEquals(2L, attempts.get(0).getStudyMaterialId());
+    }
 }
+

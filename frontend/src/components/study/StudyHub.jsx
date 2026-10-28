@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import SummaryTab from './SummaryTab';
 import QuizTab from './QuizTab';
 import RagChatTab from './RagChatTab';
-import { Sparkles, BrainCircuit, MessageSquare, FileText, ArrowLeft } from 'lucide-react';
+import QuizHistoryTab from './QuizHistoryTab';
+import FlashcardsTab from './FlashcardsTab';
+import { Sparkles, BrainCircuit, MessageSquare, FileText, ArrowLeft, BarChart3, Layers } from 'lucide-react';
 
 export default function StudyHub({ material, onBack }) {
-  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'quiz' | 'rag'
+  const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'flashcards' | 'quiz' | 'history' | 'rag'
 
   if (!material) return null;
 
@@ -65,10 +67,22 @@ export default function StudyHub({ material, onBack }) {
             <Sparkles size={18} /> Executive Summary
           </button>
           <button
+            className={`tab-btn ${activeTab === 'flashcards' ? 'active' : ''}`}
+            onClick={() => setActiveTab('flashcards')}
+          >
+            <Layers size={18} /> Flashcards
+          </button>
+          <button
             className={`tab-btn ${activeTab === 'quiz' ? 'active' : ''}`}
             onClick={() => setActiveTab('quiz')}
           >
             <BrainCircuit size={18} /> AI Quiz Arena
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            <BarChart3 size={18} /> Quiz History
           </button>
           <button
             className={`tab-btn ${activeTab === 'rag' ? 'active' : ''}`}
@@ -81,10 +95,24 @@ export default function StudyHub({ material, onBack }) {
         {/* Tab Content Panes */}
         <div>
           {activeTab === 'summary' && <SummaryTab material={material} />}
-          {activeTab === 'quiz' && <QuizTab material={material} />}
+          {activeTab === 'flashcards' && <FlashcardsTab material={material} />}
+          {activeTab === 'quiz' && (
+            <QuizTab
+              material={material}
+              onViewHistoryClick={() => setActiveTab('history')}
+            />
+          )}
+          {activeTab === 'history' && (
+            <QuizHistoryTab
+              material={material}
+              onTakeQuizClick={() => setActiveTab('quiz')}
+            />
+          )}
           {activeTab === 'rag' && <RagChatTab material={material} />}
         </div>
       </div>
     </div>
   );
 }
+
+

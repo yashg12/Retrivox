@@ -1,5 +1,6 @@
 package com.studysync.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -313,5 +314,94 @@ public class OpenAiCompatibleLlmClient implements LlmClient {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to parse response from LLM API.");
         }
     }
+
+    @Override
+    public String generateFlashcards(String extractedText, int count) {
+        if (apiKey.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "LLM service is not configured. Missing API key in environment variables.");
+        }
+
+        int targetCount = count > 0 ? count : 5;
+        String systemPrompt = "You are an expert study aid and flashcard generator. Your task is to generate exactly " + targetCount
+                + " high-yield study flashcards based SOLELY on the provided study material.\n\n"
+                + "Strict rules:\n"
+                + "1. Rely strictly on facts mentioned directly in the provided text. Do NOT assume, extrapolate, or invent facts.\n"
+                + "2. 'front' should be a concise question or concept term.\n"
+                + "3. 'back' should be a clear, accurate explanation or answer grounded in the source text.\n"
+                + "4. Output MUST be a valid JSON array and NOTHING ELSE (no markdown fences, no surrounding commentary).\n"
+                + "5. Format:\n"
+                + "[\n"
+                + "  {\n"
+                + "    \"id\": 1,\n"
+                + "    \"front\": \"What is ...?\",\n"
+                + "    \"back\": \"...\"\n"
+                + "  }\n"
+                + "]";
+
+        String userPrompt = "Generate " + targetCount + " flashcards from this study material:\n\n" + extractedText.trim();
+
+        Map<String, Object> requestBody = Map.of(
+                "model", model,
+                "messages", List.of(
+                        Map.of("role", "system", "content", systemPrompt),
+                        Map.of("role", "user", "content", userPrompt)
+                ),
+                "temperature", 0.3
+        );
+
+        String jsonPayload;
+        try {
+            jsonPayload = objectMapper.writeValueAsString(requestBody);
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to serialize LLM request.");
+        }
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/chat/completions"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + apiKey)
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .build();
+
+        HttpResponse<String> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to reach LLM service provider.");
+        }
+
+        int statusCode = response.statusCode();
+        if (statusCode >= 400) {
+            String errorMsg = "Upstream LLM API error with status " + statusCode;
+            if (statusCode == 401 || statusCode == 403) {
+                errorMsg = "Authentication failed with LLM API provider.";
+            } else if (statusCode == 429) {
+                errorMsg = "Rate limit or quota exceeded with LLM API provider.";
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, errorMsg);
+        }
+
+        try {
+            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode choices = root.path("choices");
+            if (choices.isArray() && !choices.isEmpty()) {
+                String content = choices.get(0).path("message").path("content").asText();
+                if (content != null && !content.isBlank()) {
+                    return content.trim();
+                }
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "LLM returned empty or malformed flashcard content.");
+        } catch (Exception e) {
+            if (e instanceof ResponseStatusException) {
+                throw (ResponseStatusException) e;
+            }
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to parse response from LLM API.");
+        }
+    }
 }
+
 
