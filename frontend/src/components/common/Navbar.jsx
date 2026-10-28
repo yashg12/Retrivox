@@ -15,7 +15,9 @@ export default function Navbar() {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
           <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Retrivox</span>
-          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>AI Knowledge Engine</span>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.02em' }}>
+            Your Notes. Your Knowledge. Your Next Level.
+          </span>
         </div>
       </a>
 
